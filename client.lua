@@ -33,7 +33,7 @@ commands={
 	printColor=
 		function(when,string)
 			--set atword to 0 to use later		
-			local canSend==false			
+			local canSend=false			
 			local atword=0
 			local sentence=nill
 			local inColor=nill
@@ -63,7 +63,7 @@ commands={
 				print("the color "..inColor.." is not a valid color your message is has not been send to the server")
 			end
 			if canSend then
-				return string
+				return canSend,string
 			end
 		end,
 	--prints all the client side commands use /help need to edit so that it also checks the server for commands 	
@@ -106,16 +106,16 @@ function start()
 	tcp:connect(host, port);
 end
 function checkForCommand(string)
-	local hasCommand=true
+	local hasCommand=false
 	local command=nil
-	local start=string.find(line,"/"..key)
+	local start=string.find(string,"/")
 	--check if there is an command as the first word
 	if start==1 then		
 		firstWord=string.gmatch(string, "%a+")
 		for key,value in pairs(commands) do
-			if FirstWord==value then
-				hasCommand==false
-				Command==value
+			if FirstWord==key then
+				hasCommand=true
+				Command=value
 			end
 		end
 	end
@@ -129,29 +129,32 @@ end
 --start up and send messages
 while true do
 	start()
-	local input==io.read()
-	tcp:send(io.read().."\n");
+	local input=io.read()
 	--check if input has an command and if it needs to be send to the server
+	local hasCommand,Command=checkForCommand(input)
+	if hasCommand then
+		local canSend=true
+		local otherStuff=nil	
+		canSend,otherStuff=commands[Command]("send",input)
+	end
+	if canSend then
+				tcp:send(input.."\n");
+	end
 	while true do
-		local noCommand=false
-		local s, status, partial = tcp:receive()
-		if s then		
-			if string.gmatch(s, "%a+")=="true" then
-				local command,string=separateCommandAndText(s)
-			end
-		elseif partial then		
-			if string.gmatch(partial, "%a+") then
-				local command,string=separateCommandAndText(partial)
-			end
-		else 
-			local noCommand=true
+		local s, status, partial = tcp:receive()		
+		local message=nil		
+		if s then
+			message=s
+			hasCommand,Command=checkForCommand(s)
+		elseif partial then
+			message=partial
+			hasCommand,Command=checkForCommand(partial)
+		elseif status == "closed" then 
+			break 
 		end
-		if noCommand=="false" then
-			commands[command](string)
-		else
-			print(s or partial)
+		if hasCommand then
+			canSend,otherStuff=commands[command]("got",message)
 		end
-		if status == "closed" then break end
 	end
 	tcp:close()
 end
