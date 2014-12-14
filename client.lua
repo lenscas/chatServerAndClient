@@ -1,4 +1,11 @@
 colors = require 'ansicolors'
+--if true then print text (just for debugging)
+function debug(string)
+	local isOn=true
+	if isOn then
+		print(string)
+	end
+end
 --list of all the colors and check if the given color is in this list
 function checkValidColor(needCheck)
 	local allColors={
@@ -18,7 +25,7 @@ function checkValidColor(needCheck)
 		"magentabg",
 		"cyanbg",
 		"whitebg"
-	}	
+	}
 	local valid=false
 	for key,value in pairs(allColors) do
 		if value==needCheck then
@@ -32,30 +39,30 @@ commands={
 	--used if you want to print text in color use /printColor {your color} {your text}
 	printColor=
 		function(when,string)
-			--set atword to 0 to use later		
-			local canSend=false			
+			--set atword to 0 to use later
+			local canSend=false
 			local atword=0
 			local sentence=nill
 			local inColor=nill
 			--go over string and get the desired color
-			for word in string.gmatch(string, "%a+") do 
-				--tracks at wich word we are currently					
+			for word in string.gmatch(string, "%a+") do
+				--tracks at wich word we are currently
 				atword=atword+1
-				--second word has te color the text needs to be in		
+				--second word has te color the text needs to be in
 				if atword==2 then
 					inColor=word
 				--needed to prevent an extra space at start of the senetence
-				elseif atword==3 then				
+				elseif atword==3 then
 					sentence=word
-			
-				--take earlyer words and current word and stick them together			
+
+				--take earlyer words and current word and stick them together
 				elseif atword>3 then
-					sentence=sentence.." "..word			
+					sentence=sentence.." "..word
 				end
 			end
 			--print the current sentence in desired color
-			local valid=checkValidColor(inColor)			
-			if valid==true and when=="got" then		
+			local valid=checkValidColor(inColor)
+			if valid==true and when=="got" then
 				print(colors("%{"..inColor.."}"..sentence))
 			elseif valid==true and when=="send" then
 				canSend=true
@@ -66,31 +73,31 @@ commands={
 				return canSend,string
 			end
 		end,
-	--prints all the client side commands use /help need to edit so that it also checks the server for commands 	
+	--prints all the client side commands use /help need to edit so that it also checks the server for commands
 	help=
 		function()
 			for key,value in pairs(commands) do
 				print(key)
 			end
-		end	
+		end
 }
 local function separateCommandAndText(string)
 			local atword=0
 			local sentence=nill
-			local command=nill	
-	for word in string.gmatch(string, "%a+") do 
-		--tracks at wich word we are currently					
+			local command=nill
+	for word in string.gmatch(string, "%a+") do
+		--tracks at wich word we are currently
 		atword=atword+1
-		--second word has te command that needs to be runned		
+		--second word has te command that needs to be runned
 		if atword==1 then
 			command=word
 		--needed to prevent an extra space at start of the senetence
-		elseif atword==2 then				
+		elseif atword==2 then
 			sentence=word
-	
-		--take earlier words and current word and stick them together			
+
+		--take earlier words and current word and stick them together
 		elseif atword>2 then
-			sentence=sentence.." "..word			
+			sentence=sentence.." "..word
 		end
 	end
 	return command,sentence
@@ -109,11 +116,22 @@ function checkForCommand(string)
 	local hasCommand=false
 	local command=nil
 	local start=string.find(string,"/")
+	debug(start)
 	--check if there is an command as the first word
-	if start==1 then		
-		firstWord=string.gmatch(string, "%a+")
+	if start==1 then
+		local firstWord=nil
+		local times=0
+		for words in string.gmatch(string, "%a+") do
+			local times=times+1
+			if times==1 then
+				debug(words)
+				firstWord=words
+				debug(firstWord)
+			end
+		end
+		debug(firstWord)
 		for key,value in pairs(commands) do
-			if FirstWord==key then
+			if firstWord==key then
 				hasCommand=true
 				Command=value
 			end
@@ -129,28 +147,34 @@ end
 --start up and send messages
 while true do
 	start()
+	debug("test")
 	local input=io.read()
 	--check if input has an command and if it needs to be send to the server
-	local hasCommand,Command=checkForCommand(input)
-	if hasCommand then
-		local canSend=true
-		local otherStuff=nil	
-		canSend,otherStuff=commands[Command]("send",input)
+	local hasCommand,command=nil
+	hasCommand,command=checkForCommand(input)
+	local canSend=true
+	if hasCommand==true then
+		debug(hasComand)
+		debug(command)
+		local otherStuff=nil
+		debug(command)
+		local canSend,otherStuff=commands[command]("send",input)
 	end
+	debug(canSend)
 	if canSend then
-				tcp:send(input.."\n");
+		tcp:send(input.."\n");
 	end
 	while true do
-		local s, status, partial = tcp:receive()		
-		local message=nil		
+		local s, status, partial = tcp:receive()
+		local message=nil
 		if s then
 			message=s
 			hasCommand,Command=checkForCommand(s)
 		elseif partial then
 			message=partial
 			hasCommand,Command=checkForCommand(partial)
-		elseif status == "closed" then 
-			break 
+		elseif status == "closed" then
+			break
 		end
 		if hasCommand then
 			canSend,otherStuff=commands[command]("got",message)
