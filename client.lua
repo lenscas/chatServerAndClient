@@ -1,7 +1,7 @@
 colors = require 'ansicolors'
 --if true then print text (just for debugging)
 function debug(string)
-	local isOn=true
+	local isOn=false
 	if isOn then
 		print(string)
 	end
@@ -112,18 +112,18 @@ function start()
 	tcp = assert(socket.tcp())
 	tcp:connect(host, port);
 end
-function checkForCommand(string)
+function checkForCommand(text)
 	local hasCommand=false
 	local command=nil
-	local start=string.find(string,"/")
+	local start=string.find(text,"/")
 	debug(start)
 	--check if there is an command as the first word
 	if start==1 then
 		local firstWord=nil
 		local times=0
-		for words in string.gmatch(string, "%a+") do
-			local times=times+1
-			if times==1 then
+		for words in string.gmatch(text, "%a+") do
+			times=times+1
+			if times==1 thenlo
 				debug(words)
 				firstWord=words
 				debug(firstWord)
